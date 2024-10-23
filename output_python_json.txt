@@ -1,0 +1,15 @@
+total time set trigger with schema is 1212.705900 microseconds per call
+total time is set trigger no schema 1138.012400 microseconds per call
+event arrived at 06:08:30.317959
+len channels -  1000 1000 1000 1000
+event arrived at 06:08:30.332711
+total time to load channels of 1000 elements is 8756.148300 microseconds per call
+len channels -  1000 1000 1000 1000
+event arrived at 06:08:39.111055
+total time to load channels of 1000 elements is 36115.235600 microseconds per call
+len channels -  10000 10000 10000 10000
+event arrived at 06:09:15.353054
+total time to load channels of 10000 elements is 326505.059900 microseconds per call
+len channels -  100000 100000 100000 100000
+event arrived at 06:14:43.058032
+total time to load channels of 100000 elements is 3309615.611700 microseconds per call
