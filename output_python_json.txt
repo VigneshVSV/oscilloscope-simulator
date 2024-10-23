@@ -13,3 +13,17 @@ total time to load channels of 10000 elements is 326505.059900 microseconds per 
 len channels -  100000 100000 100000 100000
 event arrived at 06:14:43.058032
 total time to load channels of 100000 elements is 3309615.611700 microseconds per call
+
+
+total time set trigger with schema is 1213.888800 microseconds per call
+total time is set trigger no schema 1116.909200 microseconds per call
+event arrived at 08:21:17.066812
+len channels -  1000 1000 1000 1000
+event arrived at 08:21:17.078256
+total time to load channels of 1000 elements is 5168.480900 microseconds per call
+len channels -  1000 1000 1000 1000
+event arrived at 08:21:22.257896
+total time to load channels of 1000 elements is 10374.732800 microseconds per call
+len channels -  10000 10000 10000 10000
+event arrived at 08:21:32.661905
+total time to load channels of 10000 elements is 73204.658300 microseconds per call

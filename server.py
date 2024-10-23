@@ -107,8 +107,8 @@ class OscilloscopeSim(Thing):
 if __name__ == '__main__':
     OscilloscopeSim(
         instance_name='oscilloscope_sim',
-        # serializer=JSONSerializer()
-        serializer=PythonBuiltinJSONSerializer()
+        serializer=JSONSerializer()
+        # serializer=PythonBuiltinJSONSerializer()
     ).run(zmq_protocols='IPC')
 
     # OscilloscopeSim(
