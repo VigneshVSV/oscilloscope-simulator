@@ -18,3 +18,8 @@ PyQt6, pyqtgraph, matplotlib (optional), numpy, hololinked
 
 ###### Result
 
+| msgspec | python's own json |
+|---------|---------|
+| ![Image 1](results/msgspec-1000.png) | ![Image 2](results/python-json-1000) |
+| ![Image 3](results/msgspec-10000.png) | ![Image 4](results/python-json-10000) |
+| ![Image 5](results/msgspec-100000.png) | ![Image 6](results/python-json-100000) |
