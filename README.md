@@ -28,6 +28,8 @@ just acccess all 4 channels + x axis (time axis)
 |1e4| 10.3ms  | 36ms  |
 |1e5| 73.2ms  | 326ms |
 
+1e3 means 1000 elements per array, which means that for 4 channels and time axis there are totally 5000 elements. 
+
 ###### Preview speed
 
 Access all 4 channels and x axis (time axis), but plot only one channel
