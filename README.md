@@ -18,8 +18,24 @@ PyQt6, pyqtgraph, matplotlib (optional), numpy, hololinked
 
 ###### Result
 
-| msgspec | python's own json |
-|---------|---------|
-| ![Image 1](results/msgspec-1000.png) | ![Image 2](results/python-json-1000) |
-| ![Image 3](results/msgspec-10000.png) | ![Image 4](results/python-json-10000) |
-| ![Image 5](results/msgspec-100000.png) | ![Image 6](results/python-json-100000) |
+Access speed - (4 channels + x axis or time axis)
+
+|number of elements per array | msgspec | python's own json |
+|------------|---------|---------|
+|1e3| 5.1ms   | 8.7ms |
+|1e4| 10.3ms  | 36ms  |
+|1e5| 73.2ms  | 326ms |
+
+Access all 4 channels and x axis (time axis), but plot only one channel
+
+|number of elements per array | msgspec | python's own json |
+|----------------------|---------|---------|
+|1e3| 63FPS | 49FPS |
+|1e4| 30FPS | 13FPS |
+|1e5| 4.5FPS | 1.7FPS |
+
+### Preview
+
+![Image 1](results/msgspec-1000.png) 
+
+Autoscale Y Axis dont work yet
