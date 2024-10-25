@@ -8,7 +8,7 @@ Currently used for speed-tests of JSON implementation (probably in future also o
 
 PyQt6, pyqtgraph, matplotlib (optional), numpy, hololinked
 
-`pip install PyQt6 pyqt pyqtgraph numpy hololinked`
+`pip install PyQt6 pyqtgraph numpy hololinked`
 
 ### To run
 
