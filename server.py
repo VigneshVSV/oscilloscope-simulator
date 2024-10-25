@@ -35,7 +35,7 @@ class OscilloscopeSim(Thing):
     x_axis = ClassSelector(doc='X-axis data', class_=(numpy.ndarray,), allow_None=True, default=None,
                             readonly=True, fget=lambda self : self._x_axis)
     
-    value_range = Tuple(default=(70,100), metadata=dict(unit='V'), length=2, accept_list=True, item_type=(float, int),
+    value_range = Tuple(default=(0.7, 1), metadata=dict(unit='V'), length=2, accept_list=True, item_type=(float, int),
                         doc='Value range of the oscilloscope')
     
     @action(input_schema=set_trigger_schema)
@@ -127,15 +127,15 @@ def start_process_2():
 
 
 if __name__ == '__main__':
-    import multiprocessing
+    # import multiprocessing
 
-    p1 = multiprocessing.Process(target=start_process_1)
-    p1.start()
+    # p1 = multiprocessing.Process(target=start_process_1)
+    # p1.start()
 
-    p2 = multiprocessing.Process(target=start_process_2)
-    p2.start()
+    # p2 = multiprocessing.Process(target=start_process_2)
+    # p2.start()
 
-    # OscilloscopeSim(
-    #     instance_name='oscilloscope-sim',
-    #     serializer='json'
-    # ).run_with_http_server(port=8080)
+    OscilloscopeSim(
+        instance_name='oscilloscope-sim',
+        serializer='json'
+    ).run_with_http_server(port=8080)
