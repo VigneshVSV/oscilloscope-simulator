@@ -1,0 +1,2 @@
+hololinked==0.2.8
+numpy==2.2.3
