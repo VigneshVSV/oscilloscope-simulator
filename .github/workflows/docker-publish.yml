@@ -59,12 +59,13 @@ jobs:
         uses: docker/metadata-action@96383f45573cb7f253c731d3b3ab81c87ef81934 # v5.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Print Docker metadata
-        run: |
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
-          echo "Labels: ${{ steps.meta.outputs.labels }}"
-          echo "Env: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+      
+      # debug step
+      # - name: Print Docker metadata
+      #   run: |
+      #     echo "Tags: ${{ steps.meta.outputs.tags }}"
+      #     echo "Labels: ${{ steps.meta.outputs.labels }}"
+      #     echo "Env: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
 
       # Build and push Docker image with Buildx (don't push on PR)
       # https://github.com/docker/build-push-action
@@ -91,4 +92,4 @@ jobs:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
         # This step uses the identity token to provision an ephemeral certificate
         # against the sigstore community Fulcio instance.
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}

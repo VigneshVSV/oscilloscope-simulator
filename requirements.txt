@@ -1,5 +1,2 @@
 hololinked==0.2.8
 numpy==2.2.3
-PyQt6==6.8.1
-PyQt6_sip==13.10.0
-pyqtgraph==0.13.7
