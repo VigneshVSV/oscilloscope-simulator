@@ -10,7 +10,7 @@ from PyQt6.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QDoubleValidator, QIntValidator
 from hololinked.client import ObjectProxy
 from hololinked.server.serializers import JSONSerializer, PythonBuiltinJSONSerializer
-from .server import OscilloscopeSim
+from server import OscilloscopeSim
 
 
 
