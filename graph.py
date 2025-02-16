@@ -9,12 +9,9 @@ from PyQt6.QtWidgets import (QApplication, QWidget, QHBoxLayout, QPushButton, QL
 from PyQt6.QtCore import pyqtSlot, pyqtSignal, QThread
 from PyQt6.QtGui import QFont, QDoubleValidator, QIntValidator
 from hololinked.client import ObjectProxy
+from hololinked.server.serializers import JSONSerializer, PythonBuiltinJSONSerializer
+from .server import OscilloscopeSim
 
-try:
-    import matplotlib.pyplot as plt 
-    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as PlotNavigationToolbar
-except ImportError:
-    print("Matplotlib not installed, please install if you want to use matplotlib plotting")
 
 
 def requestProcessID(app_name):
@@ -29,31 +26,6 @@ def requestProcessID(app_name):
 
 requestProcessID('sample_gui')
 
-
-
-class PlotCanvas(FigureCanvas):
-
-    def __init__(self, parent=None):
-        self.figure, self.axis = plt.subplots(1, 1)
-        self.line, = plt.plot([], [], label='Trace', marker='s', 
-                              linestyle='-', markersize=2)
-        
-        self.axis.set_xlabel('Time [s]', fontsize=14)
-        self.axis.set_ylabel('Trace [Arbitrary Units]',fontsize=14)
-        self.axis.set_title('Trace vs Time', fontsize=14)
-        self.axis.set_xlim(0, 1)
-        self.axis.set_ylim(-1, 100)
-           
-        plt.tight_layout()
-        plt.legend()
-        plt.grid(True)
-            
-        FigureCanvas.__init__(self, self.figure)
-        self.setParent(parent)   
-        self.parent_instance = parent
-        FigureCanvas.setSizePolicy(self, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        FigureCanvas.updateGeometry(self)
-        
 
 
 class OscilloscopeSimulator(QMainWindow):
@@ -92,8 +64,6 @@ class OscilloscopeSimulator(QMainWindow):
         self.mainLayout = QHBoxLayout()
 
         self.plotLayout = QVBoxLayout()
-        # self.plotCanvas = PlotCanvas(parent=self) # uncomment for matplotlib
-        # self.plotLayout.addWidget(self.plotCanvas)
         self.plotCanvas = pg.PlotWidget(self)
         self.plotLayout.addWidget(self.plotCanvas)
 
@@ -411,7 +381,28 @@ class AcquisitionWorker(QThread):
         
 
 
+def start_process_1():
+    OscilloscopeSim(
+        instance_name='oscilloscope-sim-msgspec-json',
+        serializer=JSONSerializer()
+    ).run(zmq_protocols='IPC')
+     
+def start_process_2():
+    OscilloscopeSim(
+        instance_name='oscilloscope-sim-python-json',
+        serializer=PythonBuiltinJSONSerializer()
+    ).run(zmq_protocols='IPC')
+
 if __name__ == '__main__':
+    import multiprocessing
+    
+    p1 = multiprocessing.Process(target=start_process_1)
+    p1.start()
+
+    p2 = multiprocessing.Process(target=start_process_2)
+    p2.start()
+    
+
     app = None
     app = QApplication(sys.argv)
     UI = OscilloscopeSimulator()
