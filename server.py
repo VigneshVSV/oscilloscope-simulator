@@ -1,4 +1,4 @@
-import typing, numpy, threading, datetime
+import typing, numpy, threading, datetime, os
 from hololinked.server import Thing, action, Property, Event, StateMachine 
 from hololinked.server import HTTPServer    
 from hololinked.param import depends_on
@@ -124,6 +124,12 @@ class OscilloscopeSim(Thing):
     )
 
     logger_remote_access = True
+    
+    @action(URL_path='/resources/wot-td', http_method="GET")
+    def get_thing_description(self, authority = None, ignore_errors = False):
+        if authority is None:
+            authority = os.environ.get('hostname', None)
+        return super().get_thing_description(authority, ignore_errors)
 
 
 JSONSchema.register_type_replacement(numpy.ndarray, 'array', schema={'type': 'array', 'items': {'type': 'number'}}) 
