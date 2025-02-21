@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+assets/
+waveform.ipynb
 # C extensions
 *.so
 # custom folders

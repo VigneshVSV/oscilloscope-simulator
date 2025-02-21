@@ -60,3 +60,54 @@ channel_data_schema = {
         }
     }
 }
+
+acquisition_start_schema = {
+    'type': 'object',
+    'properties': {
+        'max_count': {
+            'type': 'integer',
+            'minimum': 1,
+            'description': 'Maximum number of measurements to take'
+        }
+    }
+}
+
+
+set_channel_schema = {
+    'type': 'object',
+    'properties': {
+        'channel': {
+            'type': 'string',
+            'description': 'Channel to set',
+            'enum': ['A', 'B', 'C', 'D']
+        },
+        'enabled': {
+            'type': 'boolean',
+            'description': 'Enable or disable the channel'
+        },
+        'simulation_waveform': {
+            'description': 'Waveform to simulate on the channel',
+            'oneOf': [
+                {'type': 'null'},
+                {'type': 'string', 'enum': ['sine', 'square', 'triangle', 'sawtooth', 'random' ]}
+            ]
+        },
+    }
+}
+
+
+trigger_channel_schema = {
+    'type': 'object',
+    'properties': {
+        'channel': {
+            'type': 'string',
+            'description': 'Channel to set the trigger',
+            'enum': ['A', 'B', 'C', 'D', 'EXTERNAL', 'AUX']
+        },
+        'voltage' : {
+            'type': 'number',
+            'description': 'Voltage value for the trigger',
+            'unit': 'V'
+        }
+    }
+}
