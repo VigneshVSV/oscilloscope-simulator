@@ -48,8 +48,7 @@ class OscilloscopeSim(Thing):
     voltage within the specified range. Adjust time range and time resolution to change the number of samples
     and the gap between measurements to adjust the rate of data and events generated.    
         
-    Interact with a GUI here: 
-    https://thing-control-panel.hololinked.dev/#https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td
+    See links section in the TD to access this simulation device with a GUI.
     """
 
     time_resolution = Number(default=1e-6, metadata=dict(unit='s'), bounds=(0, None), step=1e-9,
@@ -80,8 +79,12 @@ class OscilloscopeSim(Thing):
 
     channels = Property(readonly=True, allow_None=True, model=channel_data_schema,
                         doc='Data of all available channels',
-                        fget=lambda self: dict(A=self._channelA.data, B=self._channelB.data, 
-                                                C=self._channelC.data, D=self._channelD.data)
+                        fget=lambda self: dict(
+                                            A=self._channelA.data, 
+                                            B=self._channelB.data, 
+                                            C=self._channelC.data, 
+                                            D=self._channelD.data
+                                        )
                     )
 
     x_axis = ClassSelector(doc='X-axis/time axis', class_=(numpy.ndarray,), metadata=dict(unit='s'),
@@ -123,12 +126,13 @@ class OscilloscopeSim(Thing):
         channel.trigger_settings.delay = delay
         channel.trigger_settings.auto_trigger = auto_trigger
 
+
     @action(input_schema=set_channel_schema)
     def set_channel(self, channel: str, enabled: bool, simulation_waveform: typing.Optional[str] = None) -> None:
         """Enable or disable a channel and set the simulation waveform"""
         channel = self._channels[channel] # type: Channel
         channel.enabled = enabled
-        channel.simulation_waveform = simulation_waveform
+        channel.simulation_waveform = simulation_waveform or 'random'
         
 
     @action()
@@ -186,11 +190,18 @@ class OscilloscopeSim(Thing):
             count += 1
             if not channel.trigger_settings.enabled:
                 time.sleep(self.gap_between_measurements)
-                channel.data = ((numpy.random.rand(number_of_samples) * (self.value_range[1] - self.value_range[0])) + self.value_range[0])
+                channel.data = get_waveform(
+                                    type=channel.simulation_waveform, 
+                                    length=number_of_samples, 
+                                    period=numpy.random.randint(1, 20), 
+                                    phase=numpy.random.rand()*2*numpy.pi
+                                )
                 channel.exec.event_dispatcher.push(datetime.datetime.now().strftime("%H:%M:%S.%f"))
                
             self.logger.info(f"Data ready for {channel.name} - count {count}")
+        self.logger.info(f"Measurement for {channel.name} stopped or finished")
         
+
     @action(input_schema=acquisition_start_schema)
     def start(self, max_count: typing.Optional[int] = None) -> None:
         """
@@ -211,6 +222,7 @@ class OscilloscopeSim(Thing):
         if any(channel.enabled for channel in self._channels.values()):
             self.state_machine.set_state('RUNNING')
 
+
     @action()
     def stop(self) -> None:
         """Stop measurement of all channels"""
@@ -219,11 +231,40 @@ class OscilloscopeSim(Thing):
             self.logger.info(f"Stopped measurement for {channel.name}")
         self.state_machine.set_state('IDLE')
 
+
     @action()
     def exit(self):
-        """overriding exit() from `Thing` parent class, this simulation cannot be exited. This is a dummy method."""
+        """
+        overriding exit() from `Thing` parent class which implements a method to exit or stop the server.
+        This simulation cannot be exited. This is a dummy method.
+        """
         pass 
      
+   
+    @action(URL_path='/resources/wot-td', http_method="GET")
+    def get_thing_description(self, authority = None, ignore_errors = False):
+        if authority is None:
+            authority = f'https://{os.environ.get('hostname', None)}'
+        td = super().get_thing_description(authority, ignore_errors)
+        td['links'] = [
+            {
+                'href': 'https://thing-control-panel.hololinked.dev/#https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td',
+                'type': 'text/html',
+                'rel': 'alternate'
+            },
+            {
+                'href': 'https://github.com/VigneshVSV/hololinked',
+                'type': 'text/html',
+                'rel': 'external'
+            },
+            {
+                'href': 'https://github.com/VigneshVSV',
+                'type': 'text/html',
+                'rel': 'external'
+            }
+        ]
+        return td
+
     state_machine = StateMachine(
         states=['IDLE', 'RUNNING'],
         initial_state='IDLE',
@@ -232,33 +273,34 @@ class OscilloscopeSim(Thing):
     )
 
     logger_remote_access = True
-    
-    @action(URL_path='/resources/wot-td', http_method="GET")
-    def get_thing_description(self, authority = None, ignore_errors = False):
-        if authority is None:
-            authority = os.environ.get('hostname', None)
-        return super().get_thing_description(authority, ignore_errors)
 
 
 JSONSchema.register_type_replacement(numpy.ndarray, 'array', schema={'type': 'array', 'items': {'type': 'number'}}) 
 
 
-def get_waveform(type: str, length: int, period: int, phase: float) -> numpy.ndarray:
+def get_waveform(type: str, length: int, period: int, phase: float, range: typing.Tuple[int, int] = (0, 1)) -> numpy.ndarray:
     """
     get waveform from type which can be 'sine', 'square', 'triangle', 'sawtooth', 'random' 
     """
+    min_val, max_val = range
     if type == 'sine':
-        return numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase)
+        waveform = numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase)
     elif type == 'square':
-        return numpy.sign(numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase))
+        waveform = numpy.sign(numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase))
     elif type == 'triangle':
-        return numpy.arcsin(numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase))
+        waveform = numpy.arcsin(numpy.sin(numpy.linspace(0, 2 * numpy.pi * period, length) + phase))
     elif type == 'sawtooth':
-        return numpy.linspace(-1, 1, length)
+        waveform = 2 * (numpy.linspace(0, period, length) % 1) - 1
+        waveform = numpy.roll(waveform, int(phase * length / (2 * numpy.pi)))
     elif type == 'random':
-        return numpy.random.rand(length)
+        waveform = numpy.random.rand(length)
     else:
-        raise ValueError('Invalid waveform type')
+        raise NotImplementedError(f"Waveform type {type} not implemented")
+    
+    # Scale waveform to the specified range
+    waveform = min_val + (max_val - min_val) * (waveform - waveform.min()) / (waveform.max() - waveform.min())
+    return waveform
+  
 
 def start_device():
     OscilloscopeSim(
@@ -266,11 +308,14 @@ def start_device():
         serializer=JSONSerializer()
     ).run(zmq_protocols='IPC')
 
-def start_https_server():
-    ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
-    ssl_context.load_cert_chain(f'assets{os.sep}security{os.sep}certificate.pem',
-                        keyfile = f'assets{os.sep}security{os.sep}key.pem')
-    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+def start_http_server():
+    cert_file = f'assets{os.sep}security{os.sep}certificate.pem'
+    key_file = f'assets{os.sep}security{os.sep}key.pem'
+    ssl_context = None
+    if os.path.exists(cert_file) and os.path.exists(key_file):
+        ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
+        ssl_context.load_cert_chain(cert_file, keyfile=key_file)
+        ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
 
     server = HTTPServer(['simulations/oscilloscope'], port=5000, ssl_context=ssl_context)
     server.listen()
@@ -282,5 +327,5 @@ if __name__ == '__main__':
     p1 = multiprocessing.Process(target=start_device)
     p1.start()
 
-    p2 = multiprocessing.Process(target=start_https_server)
+    p2 = multiprocessing.Process(target=start_http_server)
     p2.start()

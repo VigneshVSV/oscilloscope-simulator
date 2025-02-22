@@ -1,8 +1,17 @@
 # Oscilloscope Simulator
 
-Small example for a oscilloscope simulator device along with a GUI in PyQt.
+An example for an oscilloscope simulator device along with a GUI in PyQt.
+
+For a web GUI, visit [here](https://thing-control-panel.hololinked.dev/#https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td)
+and for server only visit [here](https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td).
+PyQt GUI is a standalone application that can be run on a local machine.
 
 Currently used for speed-tests of JSON implementation (probably in future also other serialization protocols).
+
+Docker image is available, just do:
+`docker pull ghcr.io/vigneshvsv/oscilloscope-simulator:main`
+for the latest image.
+Make sure to set a hostname in the environment variable `hostname` to receive a TD with correctly filled forms. 
 
 ### Dependencies
 
@@ -13,7 +22,7 @@ PyQt6, pyqtgraph, matplotlib (optional), numpy, hololinked
 ### To run
 
 - Go to server.py and run the script. 
-- Go to graph.py and run the script to show the GUI.
+- Go to graph.py and run the script to show the PyQt GUI.
 - speed-test.py prints speed test for script-only access (i.e. without plotting which takes its own extra time)
 
 #### Result

@@ -1,2 +1,3 @@
 hololinked==0.2.8
 numpy==2.2.3
+pydantic==2.8.2

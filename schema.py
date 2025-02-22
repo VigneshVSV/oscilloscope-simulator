@@ -8,7 +8,7 @@ set_trigger_schema = {
         'channel' : { 
             'type': 'string', 
             'description': 'Channel to set the trigger',
-            'enum': ['A', 'B', 'C', 'D', 'EXTERNAL', 'AUX'] 
+            'enum': ['A', 'B', 'C', 'D'] 
             # include both external and aux for 5000 & 6000 series
             # let the device driver will check if the channel is valid for the series
         },
@@ -102,7 +102,7 @@ trigger_channel_schema = {
         'channel': {
             'type': 'string',
             'description': 'Channel to set the trigger',
-            'enum': ['A', 'B', 'C', 'D', 'EXTERNAL', 'AUX']
+            'enum': ['A', 'B', 'C', 'D']
         },
         'voltage' : {
             'type': 'number',
