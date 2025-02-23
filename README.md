@@ -6,12 +6,19 @@ For a web GUI, visit [here](https://thing-control-panel.hololinked.dev/#https://
 and for server only visit [here](https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td).
 PyQt GUI is a standalone application that can be run on a local machine.
 
-Currently used for speed-tests of JSON implementation (probably in future also other serialization protocols).
+Currently this repository is used for speed-tests of JSON implementation (probably in future also other serialization protocols) and an online live example.
 
-Docker image is available, just do:
-`docker pull ghcr.io/vigneshvsv/oscilloscope-simulator:main`
+Docker image is available, just do: <br />
+`docker pull ghcr.io/vigneshvsv/oscilloscope-simulator:main` <br />
 for the latest image.
-Make sure to set a hostname in the environment variable `hostname` to receive a TD with correctly filled forms. 
+
+Following environment variables are necessary in a docker container:
+- `hostname` - hostname of the server
+- `ssl_used` - optional, pythonic evaluated as a boolean (satisfies if condition for any type) if your server has SSL setup 
+- `use_ssl` - optional, supply a certificate and key file under an assets folder for creating a SSL context 
+- `port` - optional, port number of the server if a registered domain is not used in hostname, default 5000 for `localhost`
+
+These variables are necessary for the forms to be correctly generated in a [Thing Description](https://www.w3.org/TR/wot-thing-description11/) otherwise the device will still work, but the forms will be wrong. These environment variables are not necessary if you are running the server outside docker. 
 
 ### Dependencies
 

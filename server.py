@@ -43,8 +43,6 @@ class Channel(BaseModel):
 
 
 
-
-
 class OscilloscopeSim(Thing):
     """
     Simulates an oscilloscope using numpy's random number generator to generate random voltage values.
@@ -256,7 +254,7 @@ class OscilloscopeSim(Thing):
         if authority is None:
             hostname = os.environ.get('hostname', 'localhost')
             if hostname != socket.gethostname() or hostname == 'localhost': # for docker
-                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}"            
+                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}:{os.environ.get('port', 5000)}"            
         td = super().get_thing_description(authority, ignore_errors)
         td['links'] = [
             {
