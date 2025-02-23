@@ -3,7 +3,7 @@ set_trigger_schema = {
     'properties' : {
         'enabled' : { 
             'type': 'boolean', 
-            'description': 'Enable or disable the trigger'
+            'description': 'Enable or disable the trigger',
         },
         'channel' : { 
             'type': 'string', 
@@ -15,22 +15,26 @@ set_trigger_schema = {
         'threshold' : { 
             'description': 'Threshold value for the trigger',
             'type': 'number', 
-            'minimum': 0.1
+            'minimum': 0.1,
+            'default': 0.5
         },
         'direction' : { 
             'type': 'string',
             'description': 'Trigger direction', 
-            'enum': ['above', 'below', 'rising', 'falling', 'rising_or_falling'] 
+            'enum': ['above', 'below', 'rising', 'falling', 'rising_or_falling'], 
+            'default': 'rising'
         },
         'delay' : { 
             'type': 'integer',
             'description': 'Delay in microseconds',
-            'minimum': 0
+            'minimum': 0,
+            'default': 0
         },
         'auto_trigger' : { 
             'type': 'integer', 
             'description': 'Auto trigger time in microseconds',
-            'minimum': 0 
+            'minimum': 0,
+            'default': 1e7
         }
     }
 }
@@ -65,8 +69,12 @@ acquisition_start_schema = {
     'type': 'object',
     'properties': {
         'max_count': {
-            'type': 'integer',
-            'minimum': 1,
+            'oneOf': [{
+                    'type': 'integer',
+                    'minimum': 1
+                },
+                {'type': 'null'}
+            ],           
             'description': 'Maximum number of measurements to take'
         }
     }
@@ -83,10 +91,12 @@ set_channel_schema = {
         },
         'enabled': {
             'type': 'boolean',
-            'description': 'Enable or disable the channel'
+            'description': 'Enable or disable the channel',
+            'default': True
         },
         'simulation_waveform': {
-            'description': 'Waveform to simulate on the channel',
+            'description': 'Waveform to simulate on the channel, phase and frequency are randomized and cannot be controlled',
+            'default': 'sine',
             'oneOf': [
                 {'type': 'null'},
                 {'type': 'string', 'enum': ['sine', 'square', 'triangle', 'sawtooth', 'random' ]}
@@ -107,7 +117,20 @@ trigger_channel_schema = {
         'voltage' : {
             'type': 'number',
             'description': 'Voltage value for the trigger',
-            'unit': 'V'
+            'unit': 'V',
+            'default' : 1,
+            'minimum' : 1e-3
+        },
+        'direction': {
+            'type': 'string',
+            'description': 'Trigger direction',
+            'enum': ['above', 'below', 'rising', 'falling', 'rising_or_falling']
+        },
+        'delay': {
+            'type': 'integer',
+            'description': 'Delay in microseconds',
+            'minimum': 0, 
+            'default': 0
         }
     }
 }

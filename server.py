@@ -1,5 +1,5 @@
-import typing, numpy, threading, datetime, os, time, ssl
-from pydantic import BaseModel, ConfigDict
+import typing, numpy, threading, datetime, os, time, ssl, socket
+from pydantic import BaseModel, ConfigDict, Field
 from hololinked.param import depends_on
 from hololinked.server import Thing, action, Property, Event, StateMachine 
 from hololinked.server import HTTPServer    
@@ -7,7 +7,8 @@ from hololinked.server.properties import Number, ClassSelector, Tuple
 from hololinked.server.serializers import JSONSerializer
 from hololinked.server.events import EventDispatcher
 from hololinked.server.td import JSONSchema
-from schema import set_trigger_schema, channel_data_schema, acquisition_start_schema, set_channel_schema
+from schema import (set_trigger_schema, channel_data_schema, acquisition_start_schema, 
+                set_channel_schema, trigger_channel_schema)
 
 
 
@@ -17,6 +18,7 @@ class Channel(BaseModel):
         run: bool = False
         thread: threading.Thread = None
         event_dispatcher: EventDispatcher = None
+        trigger_event: threading.Event = Field(default_factory=threading.Event)
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -25,17 +27,20 @@ class Channel(BaseModel):
         threshold: float = 0
         direction: str = 'rising'
         delay: int = 0
-        auto_trigger: int = 1000
+        auto_trigger: int = int(1e7) # 10 seconds
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = None
     enabled: bool = True
-    exec: ExecInfo = None
-    trigger_settings: TriggerSettings = None
     data: numpy.ndarray = None
     simulation_waveform: str = 'random'
+
+    exec: ExecInfo = Field(default_factory=ExecInfo)
+    trigger_settings: TriggerSettings = Field(default_factory=TriggerSettings)
+    
     model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 
 
@@ -76,6 +81,8 @@ class OscilloscopeSim(Thing):
     channel_D = ClassSelector(doc='Channel D data', class_=(numpy.ndarray,), 
                             allow_None=True, default=None, readonly=True, 
                             fget=lambda self : self._channelD.data)
+    
+    JSONSchema.register_type_replacement(numpy.ndarray, 'array', schema={'type': 'array', 'items': {'type': 'number'}}) 
 
     channels = Property(readonly=True, allow_None=True, model=channel_data_schema,
                         doc='Data of all available channels',
@@ -103,12 +110,14 @@ class OscilloscopeSim(Thing):
     def __init__(self, instance_name : str, **kwargs):
         super().__init__(instance_name=instance_name, **kwargs)
         self._x_axis = None
-        self._channelA = Channel(name='A',trigger_settings=Channel.TriggerSettings(), exec=Channel.ExecInfo())
-        self._channelB = Channel(name='B',trigger_settings=Channel.TriggerSettings(), exec=Channel.ExecInfo())
-        self._channelC = Channel(name='C',trigger_settings=Channel.TriggerSettings(), exec=Channel.ExecInfo())  
-        self._channelD = Channel(name='D',trigger_settings=Channel.TriggerSettings(), exec=Channel.ExecInfo())
+        self._channelA = Channel(name='A')
+        self._channelB = Channel(name='B')
+        self._channelC = Channel(name='C')  
+        self._channelD = Channel(name='D')
         self._channels = dict(A=self._channelA, B=self._channelB, C=self._channelC, D=self._channelD) # type: typing.Dict[str, Channel]
-    
+        self._pollstate_thread = threading.Thread(target=self.poll_state, daemon=True)
+        self._pollstate_thread.start()
+
 
     @action(input_schema=set_trigger_schema)
     def set_trigger(self, channel: str, enabled: bool, threshold: float, 
@@ -179,6 +188,7 @@ class OscilloscopeSim(Thing):
                                 friendly_name='data-ready-event-channel-D',
                                 schema={'type': 'string', 'format': 'date-time'})
 
+
     def measure_channel(self, channel: str, max_count: typing.Optional[int] = None):
         channel = self._channels[channel] # type: Channel
         channel.exec.run = True
@@ -190,17 +200,20 @@ class OscilloscopeSim(Thing):
             count += 1
             if not channel.trigger_settings.enabled:
                 time.sleep(self.gap_between_measurements)
-                channel.data = get_waveform(
+            else:
+                channel.exec.trigger_event.wait(channel.trigger_settings.auto_trigger*1e-6 if channel.trigger_settings.auto_trigger else None)
+                channel.exec.trigger_event.clear()
+                time.sleep(channel.trigger_settings.delay*1e-6)
+            channel.data = get_waveform(
                                     type=channel.simulation_waveform, 
                                     length=number_of_samples, 
                                     period=numpy.random.randint(1, 20), 
                                     phase=numpy.random.rand()*2*numpy.pi
                                 )
-                channel.exec.event_dispatcher.push(datetime.datetime.now().strftime("%H:%M:%S.%f"))
-               
+            channel.exec.event_dispatcher.push(datetime.datetime.now().strftime("%H:%M:%S.%f"))
             self.logger.info(f"Data ready for {channel.name} - count {count}")
         self.logger.info(f"Measurement for {channel.name} stopped or finished")
-        
+
 
     @action(input_schema=acquisition_start_schema)
     def start(self, max_count: typing.Optional[int] = None) -> None:
@@ -219,9 +232,7 @@ class OscilloscopeSim(Thing):
             channel.exec.thread = threading.Thread(target=self.measure_channel, args=(channel.name, max_count))
             channel.exec.thread.start()
             self.logger.info(f"Started measurement for {channel.name}")
-        if any(channel.enabled for channel in self._channels.values()):
-            self.state_machine.set_state('RUNNING')
-
+  
 
     @action()
     def stop(self) -> None:
@@ -229,8 +240,7 @@ class OscilloscopeSim(Thing):
         for channel in self._channels.values():
             channel.exec.run = False
             self.logger.info(f"Stopped measurement for {channel.name}")
-        self.state_machine.set_state('IDLE')
-
+     
 
     @action()
     def exit(self):
@@ -244,7 +254,9 @@ class OscilloscopeSim(Thing):
     @action(URL_path='/resources/wot-td', http_method="GET")
     def get_thing_description(self, authority = None, ignore_errors = False):
         if authority is None:
-            authority = f'https://{os.environ.get('hostname', None)}'
+            hostname = os.environ.get('hostname', 'localhost')
+            if hostname != socket.gethostname() or hostname == 'localhost': # for docker
+                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}"            
         td = super().get_thing_description(authority, ignore_errors)
         td['links'] = [
             {
@@ -265,17 +277,47 @@ class OscilloscopeSim(Thing):
         ]
         return td
 
+
+    @action(input_schema=trigger_channel_schema)
+    def external_trigger(self, channel: str, voltage: float, direction: str, delay: int) -> None:
+        """
+        External trigger method to simulate hardware trigger. This method ideally belongs to a trigger device
+        but placed here for simplicity of simulation. 
+        """
+        threading.Thread(target=self._issue_external_trigger, args=(channel, voltage, direction, delay)).start()
+
+    def _issue_external_trigger(self, channel: str, voltage: float, direction: str, delay: int) -> None:
+        channel = self._channels[channel] # type: Channel
+        if (channel.trigger_settings.enabled and 
+            channel.trigger_settings.threshold <= voltage and 
+            channel.trigger_settings.direction == direction
+        ):
+            time.sleep(delay*1e-6)
+            self.logger.info(f"External trigger received for {channel.name}")
+            channel.exec.trigger_event.set()
+        else:
+            self.logger.info(f"External trigger ignored for {channel.name} as conditions do not match")
+
+
     state_machine = StateMachine(
         states=['IDLE', 'RUNNING'],
-        initial_state='IDLE',
-        IDLE = [start],
-        RUNNING = [stop]
+        initial_state='IDLE'
     )
+
+    def poll_state(self):
+        """polls the state every half second and sets the state accordingly"""
+        while True:
+            if (
+                any(channel.exec.run for channel in self._channels.values()) or 
+                any(channel.exec.thread is not None and channel.exec.thread.is_alive() for channel in self._channels.values())
+            ):
+                self.state_machine.set_state('RUNNING')
+            else: 
+                self.state_machine.set_state('IDLE')
+            time.sleep(0.5)
 
     logger_remote_access = True
 
-
-JSONSchema.register_type_replacement(numpy.ndarray, 'array', schema={'type': 'array', 'items': {'type': 'number'}}) 
 
 
 def get_waveform(type: str, length: int, period: int, phase: float, range: typing.Tuple[int, int] = (0, 1)) -> numpy.ndarray:
@@ -309,13 +351,14 @@ def start_device():
     ).run(zmq_protocols='IPC')
 
 def start_http_server():
-    cert_file = f'assets{os.sep}security{os.sep}certificate.pem'
-    key_file = f'assets{os.sep}security{os.sep}key.pem'
     ssl_context = None
-    if os.path.exists(cert_file) and os.path.exists(key_file):
+    if os.environ.get('use_ssl', False):
+        cert_file = f'assets{os.sep}security{os.sep}certificate.pem'
+        key_file = f'assets{os.sep}security{os.sep}key.pem'
         ssl_context = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS_SERVER)
         ssl_context.load_cert_chain(cert_file, keyfile=key_file)
         ssl_context.minimum_version = ssl.TLSVersion.TLSv1_3
+        os.environ['ssl_used'] = 'True'
 
     server = HTTPServer(['simulations/oscilloscope'], port=5000, ssl_context=ssl_context)
     server.listen()
