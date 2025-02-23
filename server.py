@@ -262,15 +262,20 @@ class OscilloscopeSim(Thing):
             {
                 'href': 'https://thing-control-panel.hololinked.dev/#https://examples.hololinked.dev/simulations/oscilloscope/resources/wot-td',
                 'type': 'text/html',
-                'rel': 'alternate'
+                'rel': 'manifest'
             },
             {
                 'href': 'https://github.com/VigneshVSV/hololinked',
                 'type': 'text/html',
-                'rel': 'external'
+                'rel': 'service-doc'
             },
             {
                 'href': 'https://github.com/VigneshVSV',
+                'type': 'text/html',
+                'rel': 'external'
+            },
+            {
+                'href': 'https://github.com/VigneshVSV/oscilloscope-simulator',
                 'type': 'text/html',
                 'rel': 'external'
             }
