@@ -12,6 +12,9 @@ Docker image is available, just do: <br />
 `docker pull ghcr.io/vigneshvsv/oscilloscope-simulator:main` <br />
 for the latest image.
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/VigneshVSV/oscilloscope-simulator/docker-publish.yml?label=Build%20Docker%20Image)
+
+
 Following environment variables are necessary in a docker container:
 - `hostname` - hostname of the server
 - `ssl_used` - optional, pythonic evaluated as a boolean (satisfies if condition for any type) if your server has SSL setup 
