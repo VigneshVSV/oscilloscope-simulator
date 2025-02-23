@@ -253,8 +253,10 @@ class OscilloscopeSim(Thing):
     def get_thing_description(self, authority = None, ignore_errors = False):
         if authority is None:
             hostname = os.environ.get('hostname', 'localhost')
-            if hostname != socket.gethostname() or hostname == 'localhost': # for docker
-                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}:{os.environ.get('port', 5000)}"            
+            if hostname != socket.gethostname(): 
+                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}"     
+            elif hostname == 'localhost':# for docker
+                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}:{os.environ.get('port', 5000)}"       
         td = super().get_thing_description(authority, ignore_errors)
         td['links'] = [
             {
