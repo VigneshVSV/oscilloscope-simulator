@@ -193,6 +193,7 @@ class OscilloscopeSim(Thing):
         if channel.exec.event_dispatcher is None:
             channel.exec.event_dispatcher = getattr(self, f'data_ready_event_ch{channel.name}')
         number_of_samples = int(self.time_range / self.time_resolution)
+        self.calculate_x_axis()
         count = 0
         while channel.exec.run and (max_count is None or count < max_count):
             count += 1
@@ -210,6 +211,7 @@ class OscilloscopeSim(Thing):
                                 )
             channel.exec.event_dispatcher.push(datetime.datetime.now().strftime("%H:%M:%S.%f"))
             self.logger.info(f"Data ready for {channel.name} - count {count}")
+        channel.exec.run = False
         self.logger.info(f"Measurement for {channel.name} stopped or finished")
 
 
@@ -219,6 +221,7 @@ class OscilloscopeSim(Thing):
         Start measuring all channels, with optional max_count to limit the number of measurements.
         Channels already capturing data will not be restarted.
         """
+        print("called start")
         assert (isinstance(max_count, int) and max_count > 0) or max_count is None, 'max_count must be an integer greater than 0 or None'
         for channel in self._channels.values():
             if channel.exec.thread is not None and channel.exec.thread.is_alive():
@@ -253,10 +256,10 @@ class OscilloscopeSim(Thing):
     def get_thing_description(self, authority = None, ignore_errors = False):
         if authority is None:
             hostname = os.environ.get('hostname', 'localhost')
-            if hostname != socket.gethostname(): 
-                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}"     
-            elif hostname == 'localhost':# for docker
+            if hostname == 'localhost':# for docker
                 authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}:{os.environ.get('port', 5000)}"       
+            elif hostname != socket.gethostname(): 
+                authority = f"http{'s' if os.environ.get('ssl_used', False) else ''}://{os.environ.get('hostname', 'localhost')}"     
         td = super().get_thing_description(authority, ignore_errors)
         td['links'] = [
             {
